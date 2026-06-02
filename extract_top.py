@@ -1,42 +1,50 @@
 import pandas as pd
+import os
 
-# -------- SETTINGS --------
-m = 25000
-input_file = "processed_data/movies_processed.csv"
-output_file = "processed_data/top_1000_movies.csv"
+def extract_top_movies():
+    # -------- SETTINGS --------
+    m = 25000
+    input_file = "processed_data/movies_processed.csv"
+    output_file = "processed_data/top_1000_movies.csv"
 
-# -------- LOAD DATA --------
-df = pd.read_csv(input_file)
+    if not os.path.exists(input_file):
+        raise FileNotFoundError(f"Missing input file: {input_file}")
 
-df["averageRating"] = pd.to_numeric(df["averageRating"], errors="coerce")
-df["numVotes"] = pd.to_numeric(df["numVotes"], errors="coerce")
+    # -------- LOAD DATA --------
+    df = pd.read_csv(input_file)
 
-df = df.dropna(subset=["averageRating", "numVotes"])
+    df["averageRating"] = pd.to_numeric(df["averageRating"], errors="coerce")
+    df["numVotes"] = pd.to_numeric(df["numVotes"], errors="coerce")
 
-# -------- PARAMETERS --------
-C = df["averageRating"].mean()
+    df = df.dropna(subset=["averageRating", "numVotes"])
 
-print(f"\nGlobal mean (C): {C:.3f}")
-print(f"Vote threshold (m): {m}")
+    # -------- PARAMETERS --------
+    C = df["averageRating"].mean()
 
-# -------- WEIGHTED SCORE --------
-v = df["numVotes"]
-R = df["averageRating"]
+    print(f"\nGlobal mean (C): {C:.3f}")
+    print(f"Vote threshold (m): {m}")
 
-df["weightedScore"] = (v / (v + m)) * R + (m / (v + m)) * C
+    # -------- WEIGHTED SCORE --------
+    v = df["numVotes"]
+    R = df["averageRating"]
 
-# -------- FILTER --------
-df = df[df["numVotes"] >= m]
+    df["weightedScore"] = (v / (v + m)) * R + (m / (v + m)) * C
 
-# -------- TOP 1000 --------
-top_1000 = (
-    df.sort_values("weightedScore", ascending=False)
-    .head(1000)
-)
+    # -------- FILTER --------
+    df = df[df["numVotes"] >= m]
 
-# -------- SAVE --------
-top_1000.to_csv(output_file, index=False)
+    # -------- TOP 1000 --------
+    top_1000 = (
+        df.sort_values("weightedScore", ascending=False)
+        .head(1000)
+    )
 
-print("\nDONE")
-print(f"Saved: {output_file}")
-print(f"Rows: {len(top_1000)}")
+    # -------- SAVE --------
+    top_1000.to_csv(output_file, index=False)
+
+    print("\nDONE")
+    print(f"Saved: {output_file}")
+    print(f"Rows: {len(top_1000)}")
+
+if __name__ == "__main__":
+    extract_top_movies()
